@@ -6,8 +6,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
     <script type="text/javascript">
         window.onload = function () {
-            const room = new URLSearchParams(location.search).get('room')
+            var room = new URLSearchParams(location.search).get('room');
+            room = String(room).charAt(0).toUpperCase() + String(room).slice(1);
             document.getElementById('title').innerText = `Room: ${room}`
+            document.getElementById('room-name').innerText = room;
             var conn;
             var msg = document.getElementById("msg");
             var log = document.getElementById("log");
@@ -59,52 +61,58 @@
         };
     </script>
     <style type="text/css">
-        html {
-            overflow: hidden;
+        body {
+            max-width: 90vw;
+            margin-top: 0;
+            margin-bottom: 0;
         }
 
-        body {
+        .container {
             display: flex;
-            flex-direction: row;
-            gap: 10px;
-            overflow: hidden;
-            padding: 0;
-            margin: 0;
-            width: 100%;
-            height: 100%;
+            flex-direction: column;
+            height: 100vh;
         }
 
         #log {
-            background: white;
-            margin: 0;
-            padding: 0.5em 0.5em 0.5em 0.5em;
-            position: absolute;
-            top: 0.5em;
-            left: 0.5em;
-            right: 0.5em;
-            bottom: 5em;
-            overflow: auto;
+            background: var(--background);
+            flex: 9;
+            padding: 1rem;
+            border-radius: 6px;
+        }
+
+        #log>div {
+            color: var(--form-text);
+        }
+
+        #input {
+            flex: 1;
+            width: 100%;
+            padding-top: 1em;
         }
 
         #form {
             display: flex;
-            padding: 0 0.5em 0 0.5em;
-            margin: 0;
-            position: absolute;
-            bottom: 1em;
-            left: 0px;
-            width: 100%;
-            overflow: hidden;
+            flex-direction: row;
+        }
+
+        #msg {
+            flex: 1;
+            margin-right: 0;
         }
     </style>
 </head>
 
 <body>
-    <div id="log"></div>
-    <form id="form">
-        <input type="submit" value="Send" />
-        <input type="text" id="msg" size="64" autofocus />
-    </form>
+    <div class="container">
+        <h1 id="room-name"></h1>
+        <div id="log"></div>
+        <div id="input">
+            <form id="form">
+                <input type="submit" id="submit" value="Send" />
+                <input type="text" id="msg" autofocus />
+            </form>
+        </div>
+    </div>
 </body>
 
 </html>

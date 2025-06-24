@@ -1,4 +1,4 @@
-module hummingbird
+module github.com/joeypas/hummingbird
 
 go 1.24.1
 

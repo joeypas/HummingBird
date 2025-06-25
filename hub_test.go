@@ -1,10 +1,18 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/gofrs/uuid/v5"
+)
 
 func TestHubJoinLeave(t *testing.T) {
 	h := NewHub()
-	c := newClient(nil, "room1")
+	uid, err := uuid.NewV4()
+	if err != nil {
+		t.Fatalf("create uuid")
+	}
+	c := newClient(nil, "room1", uid)
 
 	h.join("room1", c)
 	if _, ok := h.rooms["room1"]; !ok {
@@ -22,7 +30,11 @@ func TestHubJoinLeave(t *testing.T) {
 
 func TestHubBroadcast(t *testing.T) {
 	h := NewHub()
-	c := newClient(nil, "room1")
+	uid, err := uuid.NewV4()
+	if err != nil {
+		t.Fatalf("create uuid")
+	}
+	c := newClient(nil, "room1", uid)
 	h.join("room1", c)
 
 	msg := []byte("hello")
@@ -39,7 +51,11 @@ func TestHubBroadcast(t *testing.T) {
 }
 
 func TestNewClient(t *testing.T) {
-	c := newClient(nil, "room1")
+	uid, err := uuid.NewV4()
+	if err != nil {
+		t.Fatalf("create uuid")
+	}
+	c := newClient(nil, "room1", uid)
 	if c.room != "room1" {
 		t.Fatalf("room not set")
 	}

@@ -6,7 +6,9 @@ import (
 	//"log"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid/v5"
+	pgxuuid "github.com/jackc/pgx-gofrs-uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -15,14 +17,15 @@ type Message struct {
 	ID       uuid.UUID `json:"id"`
 	Room     string    `json:"room"`
 	SenderID uuid.UUID `json:"sender_id"`
+	Username string    `json:"username"`
 	Body     string    `json:"body"`
 	SentAt   time.Time `json:"sent_at"` // RFC3339
 }
 
 type User struct {
-	ID       uuid.UUID `json:"id"`
-	Email    string    `json:"email"`
-	Username string    `json:"username"`
+	id       uuid.UUID
+	email    string
+	username string
 	hashed   string
 }
 
@@ -32,7 +35,13 @@ var db *pgxpool.Pool
 
 func initDB(dsn string) error {
 	var err error
-	db, err = pgxpool.New(context.Background(), dsn)
+	dbconf, err := pgxpool.ParseConfig(dsn)
+	dbconf.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		pgxuuid.Register(conn.TypeMap())
+		return nil
+	}
+	db, err = pgxpool.NewWithConfig(context.Background(), dbconf)
+
 	return err
 }
 
@@ -43,10 +52,14 @@ func CreateUser(email, username, password string) *User {
 	if err != nil {
 		return nil
 	}
+	uid, err := uuid.NewV4()
+	if err != nil {
+		return nil
+	}
 	user := User{
-		ID:       uuid.New(),
-		Email:    email,
-		Username: username,
+		id:       uid,
+		email:    email,
+		username: username,
 		hashed:   hashed,
 	}
 	err = storeUser(context.Background(), user)
@@ -89,7 +102,7 @@ func storeUser(ctx context.Context, u User) error {
 
 	_, err = tx.Exec(ctx,
 		`INSERT INTO users (id, email, username, hashed) VALUES ($1,$2,$3,$4)`,
-		u.ID, u.Email, u.Username, u.hashed)
+		u.id, u.email, u.username, u.hashed)
 	if err != nil {
 		return err
 	}
@@ -101,7 +114,7 @@ func fetchUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 	var u User
 	err := db.QueryRow(ctx,
 		`SELECT id, email, username, hashed FROM users WHERE id=$1`,
-		id).Scan(&u.ID, &u.Email, &u.Username, &u.hashed)
+		id).Scan(&u.id, &u.email, &u.username, &u.hashed)
 	return u, err
 }
 
@@ -109,7 +122,7 @@ func fetchUserByEmail(ctx context.Context, email string) (User, error) {
 	var u User
 	err := db.QueryRow(ctx,
 		`SELECT id, email, username, hashed FROM users WHERE email=$1`,
-		email).Scan(&u.ID, &u.Email, &u.Username, &u.hashed)
+		email).Scan(&u.id, &u.email, &u.username, &u.hashed)
 	return u, err
 }
 
@@ -152,5 +165,11 @@ func fetchMessage(ctx context.Context, id uuid.UUID) (Message, error) {
 		`SELECT id, room, sender_id, body, sent_at
 		   FROM messages WHERE id=$1`, id).
 		Scan(&m.ID, &m.Room, &m.SenderID, &m.Body, &m.SentAt)
+	if err != nil {
+		return m, err
+	}
+	err = db.QueryRow(ctx,
+		`SELECT username FROM users WHERE id = $1::uuid`, m.SenderID).
+		Scan(&m.Username)
 	return m, err
 }

@@ -12,8 +12,13 @@
     <button onclick="go('general')">General</button>
     <button onclick="go('music')">Music</button>
     <button onclick="go('games')">Games</button>
+    <button onclick="logout()">Logout</button>
     <script>
         function go(room) {location.href = `chat.html?room=${room}`;}
+        function logout() {localStorage.removeItem('token'); location.href = 'login.html';}
+        if (!localStorage.getItem('token')) {
+            location.href = 'login.html';
+        }
     </script>
 </body>
 

@@ -15,13 +15,19 @@ var addr = flag.String("addr", ":8080", "http service address")
 // serveWs handles websocket requests from the peer.
 func serveWs(w http.ResponseWriter, r *http.Request) {
 	room := mux.Vars(r)["room"]
+	auth := r.URL.Query().Get("token")
+	uid, err := parseToken(auth)
+	if err != nil {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	client := newClient(conn, room)
+	client := newClient(conn, room, uid)
 	hub.join(room, client)
 
 	// Allow collection of memory referenced by the caller by doing all work in
@@ -38,6 +44,8 @@ func main() {
 	go listenAndFan(context.Background(), hub)
 
 	router := mux.NewRouter()
+	router.HandleFunc("/register", registerHandler).Methods("POST")
+	router.HandleFunc("/login", loginHandler).Methods("POST")
 	router.HandleFunc("/ws/{room}", serveWs)
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 

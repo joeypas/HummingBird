@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid/v5"
 )
 
 func listenAndFan(ctx context.Context, h *Hub) {

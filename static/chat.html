@@ -6,9 +6,14 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
     <script type="text/javascript">
         window.onload = function () {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                location.href = 'login.html';
+                return;
+            }
             var room = new URLSearchParams(location.search).get('room');
             room = String(room).charAt(0).toUpperCase() + String(room).slice(1);
-            document.getElementById('title').innerText = `Room: ${room}`
+            document.getElementById('title').innerText = `Room: ${room}`;
             document.getElementById('room-name').innerText = room;
             var conn;
             var msg = document.getElementById("msg");
@@ -23,19 +28,15 @@
             }
 
             document.getElementById("form").onsubmit = function () {
-                if (!conn) {
-                    return false;
-                }
-                if (!msg.value) {
-                    return false;
-                }
+                if (!conn) {return false;}
+                if (!msg.value) {return false;}
                 conn.send(JSON.stringify({type: "message.send", text: msg.value}));
                 msg.value = "";
                 return false;
             };
 
             if (window["WebSocket"]) {
-                conn = new WebSocket("ws://" + document.location.host + `/ws/${room}`);
+                conn = new WebSocket("ws://" + document.location.host + `/ws/${room}?token=${token}`);
                 conn.onclose = function (evt) {
                     var item = document.createElement("div");
                     item.innerHTML = "<b>Connection closed.</b>";
@@ -44,7 +45,7 @@
                 conn.onmessage = function (evt) {
                     const msg = JSON.parse(evt.data);
                     const date = new Date(msg.data.sent_at);
-                    const message = date.toLocaleTimeString() + ": " + msg.data.body;
+                    const message = date.toLocaleTimeString() + " " + msg.data.username + ": " + msg.data.body;
                     var messages = message.split('\n');
                     console.log(message)
                     for (var i = 0; i < messages.length; i++) {

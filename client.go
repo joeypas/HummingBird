@@ -8,7 +8,7 @@ import (
 	"time"
 
 	//"github.com/gorilla/mux"
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid/v5"
 	"github.com/gorilla/websocket"
 )
 
@@ -47,15 +47,18 @@ type Client struct {
 	// Buffered channel of outbound messages.
 	send chan []byte
 	room string
-	id   uuid.UUID
+
+	// User Info
+	userID   uuid.UUID
+	username string
 }
 
-func newClient(conn *websocket.Conn, room string) *Client {
+func newClient(conn *websocket.Conn, room string, userID uuid.UUID) *Client {
 	return &Client{
-		conn: conn,
-		send: make(chan []byte, 256),
-		room: room,
-		id:   uuid.New(),
+		conn:   conn,
+		send:   make(chan []byte, 256),
+		room:   room,
+		userID: userID,
 	}
 }
 
@@ -91,10 +94,17 @@ func (c *Client) readPump() {
 		rawType, rawBody := ev.Type, ev.Text
 		log.Printf("recv type=%q body=%q\n", rawType, rawBody)
 
+		uid, err := uuid.NewV4()
+
+		if err != nil {
+			log.Printf("error: %v", err)
+			continue
+		}
+
 		msg := Message{
-			ID:       uuid.New(),
+			ID:       uid,
 			Room:     c.room,
-			SenderID: c.id, // assuming you added this field
+			SenderID: c.userID, // assuming you added this field
 			Body:     ev.Text,
 			SentAt:   time.Now().UTC(),
 		}

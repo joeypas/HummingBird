@@ -19,7 +19,7 @@ type Message struct {
 	SenderID uuid.UUID `json:"sender_id"`
 	Username string    `json:"username"`
 	Body     string    `json:"body"`
-	SentAt   time.Time `json:"sent_at"` // RFC3339
+	SentAt   time.Time `json:"sent_at"`
 }
 
 type User struct {
@@ -133,7 +133,7 @@ func storeAndNotify(ctx context.Context, m Message) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx) // safe even after commit
+	defer tx.Rollback(ctx)
 
 	_, err = tx.Exec(ctx,
 		`INSERT INTO messages (id, room, sender_id, body)
@@ -143,7 +143,6 @@ func storeAndNotify(ctx context.Context, m Message) error {
 		return err
 	}
 
-	// small JSON payload keeps us under 8 kB NOTIFY limit
 	payload, _ := json.Marshal(struct {
 		Room string    `json:"room"`
 		ID   uuid.UUID `json:"id"`

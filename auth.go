@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -13,7 +14,7 @@ import (
 	"github.com/gofrs/uuid/v5"
 )
 
-var jwtSecret = []byte("secret")
+var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 func issueToken(uid uuid.UUID) (string, error) {
 	exp := time.Now().Add(72 * time.Hour).Unix()

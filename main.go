@@ -12,7 +12,6 @@ import (
 
 var addr = flag.String("addr", ":8080", "http service address")
 
-// serveWs handles websocket requests from the peer.
 func serveWs(w http.ResponseWriter, r *http.Request) {
 	room := mux.Vars(r)["room"]
 	auth := r.URL.Query().Get("token")
@@ -30,8 +29,6 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	client := newClient(conn, room, uid)
 	hub.join(room, client)
 
-	// Allow collection of memory referenced by the caller by doing all work in
-	// new goroutines.
 	go client.writePump()
 	go client.readPump()
 }

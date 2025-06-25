@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	//"net/http"
 	"time"
 
-	//"github.com/gorilla/mux"
 	"github.com/gofrs/uuid/v5"
 	"github.com/gorilla/websocket"
 )
@@ -104,12 +102,11 @@ func (c *Client) readPump() {
 		msg := Message{
 			ID:       uid,
 			Room:     c.room,
-			SenderID: c.userID, // assuming you added this field
+			SenderID: c.userID,
 			Body:     ev.Text,
 			SentAt:   time.Now().UTC(),
 		}
 
-		// 2. durable store + cross-process notify
 		go storeAndNotify(context.Background(), msg)
 	}
 }

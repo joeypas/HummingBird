@@ -48,6 +48,6 @@ func listenAndFan(ctx context.Context, h *Hub) {
 			Data Message `json:"data"`
 		}{"message.new", msg})
 
-		h.broadcast(meta.Room, frame) // mutex-guarded hub method
+		h.broadcast(meta.Room, frame)
 	}
 }

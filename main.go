@@ -41,6 +41,6 @@ func main() {
 	router.HandleFunc("/ws/{room}", serveWs)
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 
-	log.Println("listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Println("listening on ", addr)
+	log.Fatal(http.ListenAndServe(*addr, router))
 }

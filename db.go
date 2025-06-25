@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"log"
+	//"log"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Message struct {
@@ -18,6 +19,13 @@ type Message struct {
 	SentAt   time.Time `json:"sent_at"` // RFC3339
 }
 
+type User struct {
+	ID       uuid.UUID `json:"id"`
+	Email    string    `json:"email"`
+	Username string    `json:"username"`
+	hashed   string
+}
+
 // ------------ pool ------------
 
 var db *pgxpool.Pool
@@ -26,6 +34,83 @@ func initDB(dsn string) error {
 	var err error
 	db, err = pgxpool.New(context.Background(), dsn)
 	return err
+}
+
+// ------------ users ------------
+
+func CreateUser(email, username, password string) *User {
+	hashed, err := hashPassword(password)
+	if err != nil {
+		return nil
+	}
+	user := User{
+		ID:       uuid.New(),
+		Email:    email,
+		Username: username,
+		hashed:   hashed,
+	}
+	err = storeUser(context.Background(), user)
+	if err != nil {
+		return nil
+	}
+
+	return &user
+}
+
+func hashPassword(password string) (string, error) {
+	var passwordBytes = []byte(password)
+
+	hashedPasswordBytes, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.MinCost)
+
+	return string(hashedPasswordBytes), err
+}
+
+func verifyCredentials(email, password string) (*User, error) {
+	user, err := fetchUserByEmail(context.Background(), email)
+	if err != nil {
+		return nil, err
+	}
+	err = bcrypt.CompareHashAndPassword(
+		[]byte(user.hashed), []byte(password),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, err
+}
+
+func storeUser(ctx context.Context, u User) error {
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	_, err = tx.Exec(ctx,
+		`INSERT INTO users (id, email, username, hashed) VALUES ($1,$2,$3,$4)`,
+		u.ID, u.Email, u.Username, u.hashed)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+func fetchUserByID(ctx context.Context, id uuid.UUID) (User, error) {
+	var u User
+	err := db.QueryRow(ctx,
+		`SELECT id, email, username, hashed FROM users WHERE id=$1`,
+		id).Scan(&u.ID, &u.Email, &u.Username, &u.hashed)
+	return u, err
+}
+
+func fetchUserByEmail(ctx context.Context, email string) (User, error) {
+	var u User
+	err := db.QueryRow(ctx,
+		`SELECT id, email, username, hashed FROM users WHERE email=$1`,
+		email).Scan(&u.ID, &u.Email, &u.Username, &u.hashed)
+	return u, err
 }
 
 // ------------ insert + notify (atomic) ------------
@@ -41,7 +126,6 @@ func storeAndNotify(ctx context.Context, m Message) error {
 		`INSERT INTO messages (id, room, sender_id, body)
 		   VALUES ($1,$2,$3,$4)`,
 		m.ID, m.Room, m.SenderID, m.Body)
-	log.Println("INSERT: ", m.ID, ", ", m.Room, ", ", m.SenderID, ", ", m.Body)
 	if err != nil {
 		return err
 	}

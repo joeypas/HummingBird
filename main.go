@@ -46,9 +46,22 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 	client := newClient(conn, room.ID, uid)
 	hub.join(room.ID, client)
-
+	msgs, err := fetchMessageHistory(ctx, room_id)
+	if err != nil {
+		log.Fatal(err)
+	}
 	go client.writePump()
 	go client.readPump()
+	for _, msg := range msgs {
+		frame, err := json.Marshal(struct {
+			Type string  `json:"type"`
+			Data Message `json:"data"`
+		}{"message.new", msg})
+		if err != nil {
+			continue
+		}
+		client.send <- frame
+	}
 }
 
 func getRooms(w http.ResponseWriter, r *http.Request) {

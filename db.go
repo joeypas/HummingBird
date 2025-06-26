@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"slices"
 
 	//"log"
 	"time"
@@ -114,6 +115,33 @@ func fetchAllRooms(ctx context.Context) ([]Room, error) {
 	}
 
 	return rooms, err
+}
+
+func fetchMessageHistory(ctx context.Context, room_id uuid.UUID) ([]Message, error) {
+	var messages []Message = make([]Message, 0, 20)
+	rows, err := db.Query(ctx,
+		`SELECT id, room_id, sender_id, body, sent_at
+		   FROM messages WHERE room_id=$1 ORDER BY sent_at DESC LIMIT 20`, room_id)
+	if err != nil {
+		return messages, err
+	}
+	for rows.Next() {
+		var m Message
+		err := rows.Scan(&m.ID, &m.RoomID, &m.SenderID, &m.Body, &m.SentAt)
+		if err != nil {
+			return messages, err
+		}
+		err = db.QueryRow(ctx,
+			`SELECT username FROM users WHERE id = $1::uuid`, m.SenderID).
+			Scan(&m.Username)
+		if err != nil {
+			return messages, err
+		}
+		messages = append(messages, m)
+	}
+
+	slices.Reverse(messages)
+	return messages, err
 }
 
 // ------------ users ------------

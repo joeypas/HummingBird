@@ -16,6 +16,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var history_limit = 20
+
 type Message struct {
 	ID       uuid.UUID `json:"id"`
 	RoomID   uuid.UUID `json:"room"`
@@ -118,10 +120,10 @@ func fetchAllRooms(ctx context.Context) ([]Room, error) {
 }
 
 func fetchMessageHistory(ctx context.Context, room_id uuid.UUID) ([]Message, error) {
-	var messages []Message = make([]Message, 0, 20)
+	var messages []Message = make([]Message, 0, history_limit)
 	rows, err := db.Query(ctx,
 		`SELECT id, room_id, sender_id, body, sent_at
-		   FROM messages WHERE room_id=$1 ORDER BY sent_at DESC LIMIT 20`, room_id)
+		   FROM messages WHERE room_id=$1 ORDER BY sent_at DESC LIMIT $2`, room_id, history_limit)
 	if err != nil {
 		return messages, err
 	}

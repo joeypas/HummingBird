@@ -1,17 +1,21 @@
 package main
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/gofrs/uuid/v5"
+)
 
 type Hub struct {
-	rooms map[string]map[*Client]bool
+	rooms map[uuid.UUID]map[*Client]bool
 	mu    sync.Mutex
 }
 
 func NewHub() *Hub {
-	return &Hub{rooms: map[string]map[*Client]bool{}}
+	return &Hub{rooms: map[uuid.UUID]map[*Client]bool{}}
 }
 
-func (h *Hub) join(room string, c *Client) {
+func (h *Hub) join(room uuid.UUID, c *Client) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -23,7 +27,7 @@ func (h *Hub) join(room string, c *Client) {
 	set[c] = true
 }
 
-func (h *Hub) leave(room string, c *Client) {
+func (h *Hub) leave(room uuid.UUID, c *Client) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if set, ok := h.rooms[room]; ok {
@@ -34,7 +38,7 @@ func (h *Hub) leave(room string, c *Client) {
 	}
 }
 
-func (h *Hub) broadcast(room string, msg []byte) {
+func (h *Hub) broadcast(room uuid.UUID, msg []byte) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	for c := range h.rooms[room] {

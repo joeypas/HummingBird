@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 )
@@ -17,13 +18,14 @@ type loginRequest struct {
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	var req registerRequest
 	if json.NewDecoder(r.Body).Decode(&req) != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	user := CreateUser(req.Email, req.Username, req.Password)
-	if user == nil {
+	user, err := createUser(ctx, req.Email, req.Username, req.Password)
+	if err != nil {
 		http.Error(w, "failed", http.StatusInternalServerError)
 		return
 	}
@@ -36,12 +38,13 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	var req loginRequest
 	if json.NewDecoder(r.Body).Decode(&req) != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	user, err := verifyCredentials(req.Email, req.Password)
+	user, err := verifyCredentials(ctx, req.Email, req.Password)
 	if err != nil {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return

@@ -12,18 +12,22 @@ func TestHubJoinLeave(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create uuid")
 	}
-	c := newClient(nil, "room1", uid)
+	room_id, err := uuid.FromString("d1ed0b21-a6d9-4aa6-8f0c-b375207c303e")
+	if err != nil {
+		t.Fatalf("room uuid")
+	}
+	c := newClient(nil, room_id, uid)
 
-	h.join("room1", c)
-	if _, ok := h.rooms["room1"]; !ok {
+	h.join(room_id, c)
+	if _, ok := h.rooms[room_id]; !ok {
 		t.Fatalf("room not created")
 	}
-	if !h.rooms["room1"][c] {
+	if !h.rooms[room_id][c] {
 		t.Fatalf("client not joined")
 	}
 
-	h.leave("room1", c)
-	if _, ok := h.rooms["room1"]; ok {
+	h.leave(room_id, c)
+	if _, ok := h.rooms[room_id]; ok {
 		t.Fatalf("room not removed after leaving")
 	}
 }
@@ -34,11 +38,15 @@ func TestHubBroadcast(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create uuid")
 	}
-	c := newClient(nil, "room1", uid)
-	h.join("room1", c)
+	room_id, err := uuid.FromString("d1ed0b21-a6d9-4aa6-8f0c-b375207c303e")
+	if err != nil {
+		t.Fatalf("room uuid")
+	}
+	c := newClient(nil, room_id, uid)
+	h.join(room_id, c)
 
 	msg := []byte("hello")
-	h.broadcast("room1", msg)
+	h.broadcast(room_id, msg)
 
 	select {
 	case got := <-c.send:
@@ -55,8 +63,12 @@ func TestNewClient(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create uuid")
 	}
-	c := newClient(nil, "room1", uid)
-	if c.room != "room1" {
+	room_id, err := uuid.FromString("d1ed0b21-a6d9-4aa6-8f0c-b375207c303e")
+	if err != nil {
+		t.Fatalf("room uuid")
+	}
+	c := newClient(nil, room_id, uid)
+	if c.room != room_id {
 		t.Fatalf("room not set")
 	}
 	if c.send == nil || cap(c.send) != 256 {

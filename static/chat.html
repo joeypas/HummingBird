@@ -12,9 +12,10 @@
                 return;
             }
             var room = new URLSearchParams(location.search).get('room');
-            room = String(room).charAt(0).toUpperCase() + String(room).slice(1);
-            document.getElementById('title').innerText = `Room: ${room}`;
-            document.getElementById('room-name').innerText = room;
+            var room_name = new URLSearchParams(location.search).get('name')
+            room_name = String(room_name).charAt(0).toUpperCase() + String(room_name).slice(1);
+            document.getElementById('title').innerText = `Room: ${room_name}`;
+            document.getElementById('room-name').innerText = room_name;
             var conn;
             var msg = document.getElementById("msg");
             var log = document.getElementById("log");

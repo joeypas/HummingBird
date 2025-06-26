@@ -30,7 +30,7 @@ func listenAndFan(ctx context.Context, h *Hub) {
 			continue
 		}
 		var meta struct {
-			Room string    `json:"room"`
+			Room uuid.UUID `json:"room"`
 			ID   uuid.UUID `json:"id"`
 		}
 		if json.Unmarshal([]byte(notification.Payload), &meta) != nil {

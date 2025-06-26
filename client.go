@@ -44,14 +44,14 @@ type Client struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
-	room string
+	room uuid.UUID
 
 	// User Info
 	userID   uuid.UUID
 	username string
 }
 
-func newClient(conn *websocket.Conn, room string, userID uuid.UUID) *Client {
+func newClient(conn *websocket.Conn, room uuid.UUID, userID uuid.UUID) *Client {
 	return &Client{
 		conn:   conn,
 		send:   make(chan []byte, 256),
@@ -101,7 +101,7 @@ func (c *Client) readPump() {
 
 		msg := Message{
 			ID:       uid,
-			Room:     c.room,
+			RoomID:   c.room,
 			SenderID: c.userID,
 			Body:     ev.Text,
 			SentAt:   time.Now().UTC(),
